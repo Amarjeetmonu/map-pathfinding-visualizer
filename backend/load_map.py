@@ -1,6 +1,7 @@
 import osmnx as ox
-ox.settings.overpass_url = "https://overpass.private.coffee/api"
+
 from math import radians, sin, cos, sqrt, asin
+import time
 
 
 # ==========================================
@@ -8,8 +9,15 @@ from math import radians, sin, cos, sqrt, asin
 # ==========================================
 
 ox.settings.requests_timeout = 300
-
 ox.settings.overpass_rate_limit = True
+
+
+# Multiple Overpass servers
+OVERPASS_SERVERS = [
+    "https://overpass.private.coffee/api",
+    "https://overpass-api.de/api"
+]
+
 
 # ==========================================
 # HAVERSINE DISTANCE
@@ -51,7 +59,6 @@ def load_graph_dynamic(start, end):
     lat1, lon1 = start
     lat2, lon2 = end
 
-
     # Distance between Start and End
     dist = haversine_meters(
         lat1,
@@ -59,7 +66,6 @@ def load_graph_dynamic(start, end):
         lat2,
         lon2
     )
-
 
     # Keep graph reasonably small
     radius = max(
@@ -70,7 +76,6 @@ def load_graph_dynamic(start, end):
         )
     )
 
-
     # Midpoint between Start and End
     mid_lat = (
         lat1 + lat2
@@ -79,7 +84,6 @@ def load_graph_dynamic(start, end):
     mid_lon = (
         lon1 + lon2
     ) / 2
-
 
     print(
         "Downloading road network..."
@@ -98,20 +102,71 @@ def load_graph_dynamic(start, end):
     )
 
 
-    # Download driving road network
-    G = ox.graph_from_point(
-        (
-            mid_lat,
-            mid_lon
-        ),
-        dist=radius,
-        network_type="drive"
-    )
+    # ==========================================
+    # TRY MULTIPLE OVERPASS SERVERS
+    # ==========================================
 
+    last_error = None
+
+    for server in OVERPASS_SERVERS:
+
+        try:
+
+            print(
+                "Trying Overpass server:",
+                server
+            )
+
+            ox.settings.overpass_url = server
+
+            G = ox.graph_from_point(
+                (
+                    mid_lat,
+                    mid_lon
+                ),
+                dist=radius,
+                network_type="drive"
+            )
+
+            print(
+                "Road network downloaded!"
+            )
+
+            print(
+                "Server used:",
+                server
+            )
+
+            return G
+
+        except Exception as error:
+
+            last_error = error
+
+            print(
+                "Overpass server failed:",
+                server
+            )
+
+            print(
+                "Error:",
+                error
+            )
+
+            print(
+                "Trying next server..."
+            )
+
+            # Don't hammer public Overpass servers
+            time.sleep(5)
+
+
+    # ==========================================
+    # ALL SERVERS FAILED
+    # ==========================================
 
     print(
-        "Road network downloaded!"
+        "All Overpass servers failed."
     )
 
-
-    return G
+    raise last_errors
