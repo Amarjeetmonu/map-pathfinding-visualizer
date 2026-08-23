@@ -267,15 +267,10 @@ async function solve() {
     }
 
     catch (error) {
-
-        console.error(
-            "JAVASCRIPT ERROR:",
-            error
-        );
-
-        stats.innerText =
-            "Something went wrong. Check Console.";
-    }
+    console.error("Solve error:", error);
+    document.getElementById("stats").innerText =
+        "Something went wrong. Check Console.";
+}
 
 }
 
