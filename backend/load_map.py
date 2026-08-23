@@ -1,21 +1,24 @@
 import osmnx as ox
-
 from math import radians, sin, cos, sqrt, asin
 import time
 
 
 # ==========================================
-# OVERPASS SETTINGS
+# OSMNX SETTINGS
 # ==========================================
 
 ox.settings.requests_timeout = 300
 ox.settings.overpass_rate_limit = True
+ox.settings.use_cache = True
 
 
-# Multiple Overpass servers
+# ==========================================
+# OVERPASS SERVERS
+# ==========================================
+
 OVERPASS_SERVERS = [
-    "https://overpass.private.coffee/api",
-    "https://overpass-api.de/api"
+    "https://overpass-api.de/api",
+    "https://overpass.private.coffee/api"
 ]
 
 
@@ -23,12 +26,7 @@ OVERPASS_SERVERS = [
 # HAVERSINE DISTANCE
 # ==========================================
 
-def haversine_meters(
-    lat1,
-    lon1,
-    lat2,
-    lon2
-):
+def haversine_meters(lat1, lon1, lat2, lon2):
 
     R = 6371000.0
 
@@ -39,10 +37,8 @@ def haversine_meters(
         sin(dlat / 2.0) ** 2
         +
         cos(radians(lat1))
-        *
-        cos(radians(lat2))
-        *
-        sin(dlon / 2.0) ** 2
+        * cos(radians(lat2))
+        * sin(dlon / 2.0) ** 2
     )
 
     c = 2 * asin(sqrt(a))
@@ -59,7 +55,10 @@ def load_graph_dynamic(start, end):
     lat1, lon1 = start
     lat2, lon2 = end
 
-    # Distance between Start and End
+    # --------------------------------------
+    # Distance between start and end
+    # --------------------------------------
+
     dist = haversine_meters(
         lat1,
         lon1,
@@ -67,7 +66,10 @@ def load_graph_dynamic(start, end):
         lon2
     )
 
-    # Keep graph reasonably small
+    # --------------------------------------
+    # Dynamic radius
+    # --------------------------------------
+
     radius = max(
         800,
         min(
@@ -76,35 +78,26 @@ def load_graph_dynamic(start, end):
         )
     )
 
-    # Midpoint between Start and End
-    mid_lat = (
-        lat1 + lat2
-    ) / 2
+    # --------------------------------------
+    # Midpoint
+    # --------------------------------------
 
-    mid_lon = (
-        lon1 + lon2
-    ) / 2
+    mid_lat = (lat1 + lat2) / 2
+    mid_lon = (lon1 + lon2) / 2
 
-    print(
-        "Downloading road network..."
-    )
+    print("=" * 60)
+    print("LOADING ROAD GRAPH")
+    print("=" * 60)
 
-    print(
-        "Center:",
-        mid_lat,
-        mid_lon
-    )
+    print("Start:", start)
+    print("End:", end)
+    print("Distance:", dist, "meters")
+    print("Center:", mid_lat, mid_lon)
+    print("Radius:", radius, "meters")
 
-    print(
-        "Radius:",
-        radius,
-        "meters"
-    )
-
-
-    # ==========================================
-    # TRY MULTIPLE OVERPASS SERVERS
-    # ==========================================
+    # --------------------------------------
+    # Try Overpass servers
+    # --------------------------------------
 
     last_error = None
 
@@ -112,13 +105,14 @@ def load_graph_dynamic(start, end):
 
         try:
 
-            print(
-                "Trying Overpass server:",
-                server
-            )
+            print()
+            print("Trying Overpass server:")
+            print(server)
 
+            # Set current Overpass server
             ox.settings.overpass_url = server
 
+            # Download road network
             G = ox.graph_from_point(
                 (
                     mid_lat,
@@ -128,14 +122,12 @@ def load_graph_dynamic(start, end):
                 network_type="drive"
             )
 
-            print(
-                "Road network downloaded!"
-            )
-
-            print(
-                "Server used:",
-                server
-            )
+            print()
+            print("SUCCESS!")
+            print("Road network downloaded.")
+            print("Server used:", server)
+            print("Nodes:", len(G.nodes))
+            print("Edges:", len(G.edges))
 
             return G
 
@@ -143,30 +135,30 @@ def load_graph_dynamic(start, end):
 
             last_error = error
 
-            print(
-                "Overpass server failed:",
-                server
-            )
+            print()
+            print("Overpass server failed:")
+            print(server)
 
-            print(
-                "Error:",
-                error
-            )
+            print("Error:")
+            print(error)
 
-            print(
-                "Trying next server..."
-            )
+            print("Trying next server...")
 
-            # Don't hammer public Overpass servers
-            time.sleep(5)
+            # Small delay before next server
+            time.sleep(3)
 
+    # --------------------------------------
+    # All servers failed
+    # --------------------------------------
 
-    # ==========================================
-    # ALL SERVERS FAILED
-    # ==========================================
+    print()
+    print("=" * 60)
+    print("ALL OVERPASS SERVERS FAILED")
+    print("=" * 60)
 
-    print(
-        "All Overpass servers failed."
+    # IMPORTANT:
+    # last_error, NOT last_errors
+    raise RuntimeError(
+        f"Unable to download road network. "
+        f"Last Overpass error: {last_error}"
     )
-
-    raise last_errors
