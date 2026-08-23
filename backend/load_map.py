@@ -1,5 +1,5 @@
 import osmnx as ox
-ox.settings.overpass_url = "https://overpass-api.de/api"
+ox.settings.overpass_url = "https://overpass.private.coffee/api"
 from math import radians, sin, cos, sqrt, asin
 
 
