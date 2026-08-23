@@ -148,7 +148,7 @@ async function solve() {
 
         console.log(
             "HTTP status:",
-            response.status
+            res.status
         );
 
 
@@ -156,7 +156,7 @@ async function solve() {
         // RECEIVE RESPONSE
         // ===============================
 
-        const data = await response.json();
+        const data = await res.json();
 
 
         console.log(
@@ -165,7 +165,7 @@ async function solve() {
         );
 
 
-        if (!response.ok) {
+        if (!res.ok) {
 
             console.error(
                 "BACKEND ERROR:",
