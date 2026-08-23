@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=\, initial-scale=1.0">
+    <title>Map Pathfinding Visualizer</title>
+<!--Leaflet CSS-->
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+<!--Our CSS-->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!--Control Panel-->
+    <div id="controls">
+   <labels for="algo">algorithm:</labels>
+
+  <select id="algo">
+   <option value="dijkstra">Dijkstra</option>
+   <option value="astar">A*</option>
+   <option value="bfs">BFS</option>
+   <option value="dfs">DFS</option>
+  </select>
+  
+<button id="solveBtn">Solve</button>
+<button id="resetBtn">Reset</button>
+
+<div id="stats">
+    Select start and end points
+</div>
+
+    </div>
+
+    <!--Map Container-->
+
+<div id="map"></div>
+
+<!--Leaflet JavaScript-->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!--Our JavaScript-->
+<script src="script.js"></script>
+    
+</body>
+</html>
