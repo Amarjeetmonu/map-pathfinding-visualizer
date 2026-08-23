@@ -2,7 +2,11 @@
 // 1. CREATE MAP
 // ===============================
 
-let map = L.map("map").setView([28.61, 77.20], 13);
+let map = L.map("map").setView(
+    [28.61, 77.20],
+    13
+);
+
 
 L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -17,7 +21,8 @@ let startMarker = null;
 let endMarker = null;
 let routeLine = null;
 
-let visitedLayer = L.layerGroup().addTo(map);
+let visitedLayer =
+    L.layerGroup().addTo(map);
 
 let startLatLng = null;
 let endLatLng = null;
@@ -37,10 +42,11 @@ map.on("click", function (e) {
             e.latlng.lng
         ];
 
-        startMarker = L.marker(e.latlng)
-            .addTo(map)
-            .bindPopup("Start")
-            .openPopup();
+        startMarker =
+            L.marker(e.latlng)
+                .addTo(map)
+                .bindPopup("Start")
+                .openPopup();
 
         return;
     }
@@ -54,10 +60,11 @@ map.on("click", function (e) {
             e.latlng.lng
         ];
 
-        endMarker = L.marker(e.latlng)
-            .addTo(map)
-            .bindPopup("End")
-            .openPopup();
+        endMarker =
+            L.marker(e.latlng)
+                .addTo(map)
+                .bindPopup("End")
+                .openPopup();
 
         return;
     }
@@ -69,9 +76,13 @@ map.on("click", function (e) {
 // 4. SOLVE BUTTON
 // ===============================
 
-const solveButton = document.getElementById("solveBtn");
+const solveButton =
+    document.getElementById("solveBtn");
 
-solveButton.addEventListener("click", solve);
+solveButton.addEventListener(
+    "click",
+    solve
+);
 
 
 // ===============================
@@ -83,24 +94,37 @@ async function solve() {
     // Check start and end
     if (!startLatLng || !endLatLng) {
 
-        alert("Select start and end points");
+        alert(
+            "Select start and end points"
+        );
 
         return;
     }
 
 
-    // Get selected algorithm
-    const algo = document.getElementById("algo").value;
+    // Selected algorithm
+    const algo =
+        document.getElementById(
+            "algo"
+        ).value;
 
-    const stats = document.getElementById("stats");
+
+    const stats =
+        document.getElementById(
+            "stats"
+        );
 
 
-    // Clear previous result
+    // Clear previous visited nodes
     visitedLayer.clearLayers();
 
+
+    // Remove previous route
     if (routeLine) {
 
-        map.removeLayer(routeLine);
+        map.removeLayer(
+            routeLine
+        );
 
         routeLine = null;
     }
@@ -113,42 +137,63 @@ async function solve() {
     try {
 
         // ===============================
-        // SEND DATA TO BACKEND
+        // SEND REQUEST
         // ===============================
 
-        console.log("Sending request...");
+        console.log(
+            "Sending request..."
+        );
 
-        console.log("Start:", startLatLng);
+        console.log(
+            "Start:",
+            startLatLng
+        );
 
-        console.log("End:", endLatLng);
+        console.log(
+            "End:",
+            endLatLng
+        );
 
-        console.log("Algorithm:", algo);
-
-
-        const res = await fetch("https://map-pathfinding-backend.onrender.com/solve",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify({
-
-                    start: startLatLng,
-
-                    end: endLatLng,
-
-                    algo: algo
-
-                })
-            }
+        console.log(
+            "Algorithm:",
+            algo
         );
 
 
+        const response =
+            await fetch(
+                "http://127.0.0.1:8000/solve",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        start:
+                            startLatLng,
+
+                        end:
+                            endLatLng,
+
+                        algo:
+                            algo
+
+                    })
+                }
+            );
+
+
+        // ===============================
+        // HTTP STATUS
+        // ===============================
+
         console.log(
             "HTTP status:",
-            res.status
+            response.status
         );
 
 
@@ -156,7 +201,8 @@ async function solve() {
         // RECEIVE RESPONSE
         // ===============================
 
-        const data = await res.json();
+        const data =
+            await response.json();
 
 
         console.log(
@@ -165,12 +211,17 @@ async function solve() {
         );
 
 
-        if (!res.ok) {
+        // ===============================
+        // CHECK ERROR
+        // ===============================
+
+        if (!response.ok) {
 
             console.error(
                 "BACKEND ERROR:",
                 data
             );
+
 
             stats.innerText =
                 "Backend error. Check Console.";
@@ -180,16 +231,22 @@ async function solve() {
 
 
         // ===============================
-        // CHECK DATA
+        // GET DATA
         // ===============================
 
-        const visited = data.visited || [];
-        const path = data.path || [];
+        const visited =
+            data.visited || [];
+
+
+        const path =
+            data.path || [];
+
 
         console.log(
             "Visited count:",
             visited.length
         );
+
 
         console.log(
             "Path count:",
@@ -201,7 +258,11 @@ async function solve() {
         // DRAW VISITED NODES
         // ===============================
 
-        for (let i = 0; i < visited.length; i++) {
+        for (
+            let i = 0;
+            i < visited.length;
+            i++
+        ) {
 
             L.circleMarker(
                 visited[i],
@@ -216,7 +277,9 @@ async function solve() {
 
                     weight: 1
                 }
-            ).addTo(visitedLayer);
+            ).addTo(
+                visitedLayer
+            );
         }
 
 
@@ -224,27 +287,34 @@ async function solve() {
         // DRAW FINAL PATH
         // ===============================
 
-        if (path.length > 0) {
+        if (
+            path.length > 0
+        ) {
 
-            routeLine = L.polyline(
-                path,
-                {
-                    color: "deepskyblue",
+            routeLine =
+                L.polyline(
+                    path,
+                    {
+                        color:
+                            "deepskyblue",
 
-                    weight: 6,
+                        weight: 6,
 
-                    opacity: 1
-                }
-            ).addTo(map);
+                        opacity: 1
+                    }
+                ).addTo(map);
 
 
-            // Automatically move map
-            // so route is visible
+            // Automatically fit route
+            // inside the map
 
             map.fitBounds(
                 routeLine.getBounds(),
                 {
-                    padding: [30, 30]
+                    padding: [
+                        30,
+                        30
+                    ]
                 }
             );
         }
@@ -266,11 +336,19 @@ async function solve() {
 
     }
 
+
     catch (error) {
-    console.error("Solve error:", error);
-    document.getElementById("stats").innerText =
-        "Something went wrong. Check Console.";
-}
+
+        console.error(
+            "Solve error:",
+            error
+        );
+
+
+        stats.innerText =
+            "Something went wrong. Check Console.";
+
+    }
 
 }
 
@@ -281,6 +359,7 @@ async function solve() {
 
 function resetMap() {
 
+    // Remove start marker
     if (startMarker) {
 
         map.removeLayer(
@@ -289,6 +368,7 @@ function resetMap() {
     }
 
 
+    // Remove end marker
     if (endMarker) {
 
         map.removeLayer(
@@ -297,6 +377,7 @@ function resetMap() {
     }
 
 
+    // Remove route
     if (routeLine) {
 
         map.removeLayer(
@@ -305,9 +386,11 @@ function resetMap() {
     }
 
 
+    // Remove visited nodes
     visitedLayer.clearLayers();
 
 
+    // Reset variables
     startMarker = null;
 
     endMarker = null;
@@ -319,8 +402,10 @@ function resetMap() {
     endLatLng = null;
 
 
+    // Reset statistics
     document.getElementById(
         "stats"
     ).innerText =
         "Select start and end points";
+
 }

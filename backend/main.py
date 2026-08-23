@@ -1,8 +1,19 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import (
+    FastAPI,
+    HTTPException
+)
+
+from fastapi.middleware.cors import (
+    CORSMiddleware
+)
+
 import osmnx as ox
 
-from load_map import load_graph_dynamic
+
+from load_map import (
+    load_graph_dynamic
+)
+
 
 from algorithms import (
     bfs,
@@ -13,163 +24,232 @@ from algorithms import (
 )
 
 
-# ==========================================
-# CREATE FASTAPI APP
-# ==========================================
-
 app = FastAPI()
+
+
+# ========================================
+# CORS
+# ========================================
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://map-pathfinding-visualizer1.onrender.com",
-        "http://127.0.0.1:5500",
-        "http://localhost:5500"
-    ],
-    allow_credentials=True,
+
+    allow_origins=["*"],
+
     allow_methods=["*"],
+
     allow_headers=["*"],
 )
 
-# ==========================================
+
+# ========================================
 # HOME
-# ==========================================
+# ========================================
 
 @app.get("/")
 def home():
 
     return {
-        "message": "Map Pathfinding Visualizer"
+        "message":
+        "Map Pathfinding Visualizer"
     }
 
 
-# ==========================================
+# ========================================
 # SOLVE
-# ==========================================
+# ========================================
 
 @app.post("/solve")
-def solve(data: dict):
+def solve(
+    data: dict
+):
 
     try:
 
-        print("\n==============================")
-        print("SOLVE REQUEST RECEIVED")
-        print("==============================")
+        print(
+            "\n========================"
+        )
 
-        # ----------------------------------
-        # 1. GET DATA FROM FRONTEND
-        # ----------------------------------
+        print(
+            "SOLVE REQUEST RECEIVED"
+        )
 
-        start = data.get("start")
-        end = data.get("end")
-        algo = data.get("algo", "dijkstra").lower()
+        print(
+            "========================"
+        )
 
-        print("Start:", start)
-        print("End:", end)
-        print("Algorithm:", algo)
+
+        start = data.get(
+            "start"
+        )
+
+        end = data.get(
+            "end"
+        )
+
+        algo = data.get(
+            "algo",
+            "dijkstra"
+        ).lower()
+
+
+        print(
+            "Start:",
+            start
+        )
+
+        print(
+            "End:",
+            end
+        )
+
+        print(
+            "Algorithm:",
+            algo
+        )
 
 
         if not start or not end:
 
             raise HTTPException(
                 status_code=400,
-                detail="Start and end points are required"
+                detail=
+                "start and end required"
             )
 
 
-        # ----------------------------------
-        # 2. LOAD ROAD GRAPH
-        # ----------------------------------
+        # ==================================
+        # STEP 1
+        # LOAD GRAPH
+        # ==================================
 
-        print("STEP 1: Loading road graph...")
+        print(
+            "STEP 1: Loading road graph..."
+        )
+
 
         G = load_graph_dynamic(
             start,
             end
         )
 
-        print("STEP 2: Road graph loaded!")
 
         print(
-            "Number of nodes:",
-            len(G.nodes)
-        )
-
-        print(
-            "Number of edges:",
-            len(G.edges)
+            "STEP 2: Road graph loaded!"
         )
 
 
-        # ----------------------------------
-        # 3. STORE NODE COORDINATES
-        # ----------------------------------
+        # ==================================
+        # STEP 3
+        # NODE COORDINATES
+        # ==================================
 
-        print("STEP 3: Creating node coordinates...")
+        print(
+            "STEP 3: Creating node coordinates..."
+        )
+
 
         nodes = {
-            n: (d["y"], d["x"])
-            for n, d in G.nodes(data=True)
+
+            n: (
+                d["y"],
+                d["x"]
+            )
+
+            for n, d
+            in G.nodes(
+                data=True
+            )
         }
 
 
-        # ----------------------------------
-        # 4. CREATE ADJACENCY LIST
-        # ----------------------------------
+        # ==================================
+        # STEP 4
+        # ADJACENCY LIST
+        # ==================================
 
-        print("STEP 4: Creating adjacency list...")
+        print(
+            "STEP 4: Creating adjacency list..."
+        )
+
 
         adj = {}
 
 
-        for u, v, key, data_edge in G.edges(
+        for (
+            u,
+            v,
+            key,
+            data_edge
+        ) in G.edges(
             keys=True,
             data=True
         ):
 
-            length = data_edge.get("length")
+
+            length = data_edge.get(
+                "length"
+            )
 
 
-            # If edge doesn't have length
             if length is None:
 
-                length = haversine_meters_coords(
-                    nodes[u],
-                    nodes[v]
+                a = nodes[u]
+
+                b = nodes[v]
+
+
+                length = (
+                    haversine_meters_coords(
+                        a,
+                        b
+                    )
                 )
 
 
-            # u -> v
             adj.setdefault(
                 u,
                 []
             ).append(
-                (v, length)
+                (
+                    v,
+                    length
+                )
             )
 
 
-            # v -> u
             adj.setdefault(
                 v,
                 []
             ).append(
-                (u, length)
+                (
+                    u,
+                    length
+                )
             )
 
 
-        print("STEP 5: Adjacency list created!")
+        print(
+            "STEP 5: Adjacency list created!"
+        )
 
 
-        # ----------------------------------
-        # 5. FIND NEAREST START NODE
-        # ----------------------------------
+        # ==================================
+        # STEP 6
+        # START NODE
+        # ==================================
 
-        print("STEP 6: Finding nearest start node...")
+        print(
+            "STEP 6: Finding nearest start node..."
+        )
 
-        start_node = ox.distance.nearest_nodes(
-            G,
-            start[1],
-            start[0]
+
+        start_node = (
+            ox.distance.nearest_nodes(
+                G,
+                start[1],
+                start[0]
+            )
         )
 
 
@@ -179,16 +259,22 @@ def solve(data: dict):
         )
 
 
-        # ----------------------------------
-        # 6. FIND NEAREST END NODE
-        # ----------------------------------
+        # ==================================
+        # STEP 7
+        # END NODE
+        # ==================================
 
-        print("STEP 7: Finding nearest end node...")
+        print(
+            "STEP 7: Finding nearest end node..."
+        )
 
-        end_node = ox.distance.nearest_nodes(
-            G,
-            end[1],
-            end[0]
+
+        end_node = (
+            ox.distance.nearest_nodes(
+                G,
+                end[1],
+                end[0]
+            )
         )
 
 
@@ -198,19 +284,16 @@ def solve(data: dict):
         )
 
 
-        # ----------------------------------
-        # 7. RUN ALGORITHM
-        # ----------------------------------
+        # ==================================
+        # STEP 8
+        # RUN ALGORITHM
+        # ==================================
 
         print(
             "STEP 8: Running",
             algo.upper()
         )
 
-
-        # ==================================
-        # BFS
-        # ==================================
 
         if algo == "bfs":
 
@@ -221,7 +304,7 @@ def solve(data: dict):
             )
 
 
-            dist = 0.0
+            distance = 0.0
 
 
             for i in range(
@@ -229,15 +312,19 @@ def solve(data: dict):
             ):
 
                 u = path_nodes[i]
+
                 v = path_nodes[i + 1]
 
 
                 weight = next(
                     (
                         w
-                        for neighbor, w
-                        in adj.get(u, [])
-                        if neighbor == v
+                        for nv, w
+                        in adj.get(
+                            u,
+                            []
+                        )
+                        if nv == v
                     ),
                     None
                 )
@@ -245,18 +332,16 @@ def solve(data: dict):
 
                 if weight is None:
 
-                    weight = haversine_meters_coords(
-                        nodes[u],
-                        nodes[v]
+                    weight = (
+                        haversine_meters_coords(
+                            nodes[u],
+                            nodes[v]
+                        )
                     )
 
 
-                dist += weight
+                distance += weight
 
-
-        # ==================================
-        # DFS
-        # ==================================
 
         elif algo == "dfs":
 
@@ -267,7 +352,7 @@ def solve(data: dict):
             )
 
 
-            dist = 0.0
+            distance = 0.0
 
 
             for i in range(
@@ -275,15 +360,19 @@ def solve(data: dict):
             ):
 
                 u = path_nodes[i]
+
                 v = path_nodes[i + 1]
 
 
                 weight = next(
                     (
                         w
-                        for neighbor, w
-                        in adj.get(u, [])
-                        if neighbor == v
+                        for nv, w
+                        in adj.get(
+                            u,
+                            []
+                        )
+                        if nv == v
                     ),
                     None
                 )
@@ -291,42 +380,23 @@ def solve(data: dict):
 
                 if weight is None:
 
-                    weight = haversine_meters_coords(
-                        nodes[u],
-                        nodes[v]
+                    weight = (
+                        haversine_meters_coords(
+                            nodes[u],
+                            nodes[v]
+                        )
                     )
 
 
-                dist += weight
+                distance += weight
 
-
-        # ==================================
-        # DIJKSTRA
-        # ==================================
-
-        elif algo == "dijkstra":
-
-            (
-                path_nodes,
-                visited_nodes,
-                dist
-            ) = dijkstra(
-                adj,
-                start_node,
-                end_node
-            )
-
-
-        # ==================================
-        # A*
-        # ==================================
 
         elif algo == "astar":
 
             (
                 path_nodes,
                 visited_nodes,
-                dist
+                distance
             ) = astar(
                 adj,
                 nodes,
@@ -335,21 +405,32 @@ def solve(data: dict):
             )
 
 
-        # ==================================
-        # INVALID ALGORITHM
-        # ==================================
+        elif algo == "dijkstra":
+
+            (
+                path_nodes,
+                visited_nodes,
+                distance
+            ) = dijkstra(
+                adj,
+                start_node,
+                end_node
+            )
+
 
         else:
 
             raise HTTPException(
                 status_code=400,
-                detail="Invalid algorithm"
+                detail=
+                "Invalid algorithm"
             )
 
 
         print(
             "STEP 9: Algorithm completed!"
         )
+
 
         print(
             "Path nodes:",
@@ -363,31 +444,42 @@ def solve(data: dict):
 
         print(
             "Distance:",
-            dist,
+            distance,
             "meters"
         )
 
 
-        # ----------------------------------
-        # 8. CONVERT NODES TO COORDINATES
-        # ----------------------------------
+        # ==================================
+        # STEP 10
+        # CONVERT TO COORDINATES
+        # ==================================
 
         print(
-            "STEP 10: Converting nodes to coordinates..."
+            "STEP 10: Converting result to coordinates..."
         )
 
 
         visited_coords = [
+
             nodes[n]
-            for n in visited_nodes
+
+            for n
+            in visited_nodes
+
             if n in nodes
+
         ]
 
 
         path_coords = [
+
             nodes[n]
-            for n in path_nodes
+
+            for n
+            in path_nodes
+
             if n in nodes
+
         ]
 
 
@@ -402,42 +494,35 @@ def solve(data: dict):
         )
 
 
-        # ----------------------------------
-        # 9. RETURN DATA TO FRONTEND
-        # ----------------------------------
-
-        result = {
-
-            "visited": visited_coords,
-
-            "path": path_coords,
-
-            "distance_km": round(
-                dist / 1000.0,
-                3
-            ),
-
-            "visited_count": len(
-                visited_coords
-            )
-        }
-
+        # ==================================
+        # STEP 11
+        # RESPONSE
+        # ==================================
 
         print(
             "STEP 11: Sending result to frontend"
         )
 
-        print(
-            "=============================="
-        )
 
+        return {
 
-        return result
+            "visited":
+                visited_coords,
 
+            "path":
+                path_coords,
 
-    # ======================================
-    # ERROR HANDLING
-    # ======================================
+            "distance_km":
+                round(
+                    distance / 1000.0,
+                    3
+                ),
+
+            "visited_count":
+                len(visited_coords)
+
+        }
+
 
     except HTTPException:
 
@@ -455,11 +540,14 @@ def solve(data: dict):
         )
 
         print(
-            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
         )
 
 
         raise HTTPException(
+
             status_code=500,
+
             detail=str(e)
+
         )
